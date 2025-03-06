@@ -1,0 +1,70 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.container-jogo {
+    padding: 1rem;
+    background-color: gray;
+}
+
+.quadriculado {
+    display: grid;
+
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    grid-gap: 2px;
+}
+
+.casa {
+    background-color: rebeccapurple;
+    width: 100px;
+    height: 100px;
+
+    text-align: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.casa:hover {
+    cursor: pointer;
+}
+
+.pontuacao {
+    background-color: rebeccapurple;
+    padding: 1rem;
+
+    display: flex;
+}
+
+.separador-pontuacao {
+    margin: 0 3rem;
+    font-size: 2rem;
+
+    text-align: center;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.time {
+    background-color: aqua;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.icone {
+    font-size: 4rem;
+    text-align: center;
+}
+
+.pontos {
+    font-size: 1.5rem;
+    text-align: center;
+}
