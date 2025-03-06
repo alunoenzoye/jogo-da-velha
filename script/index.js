@@ -1,17 +1,6 @@
 const CASA_VAZIA = null;
-const MARCADOR_X = false;
-const MARCADOR_O = true;
-
-let jogadasFeitas = 0;
-let turnoTime = false;
-let pontosX = 0;
-let pontosO = 0.
-let casasMarcadas = [
-    [CASA_VAZIA, CASA_VAZIA, CASA_VAZIA],
-    [CASA_VAZIA, CASA_VAZIA, CASA_VAZIA],
-    [CASA_VAZIA, CASA_VAZIA, CASA_VAZIA],
-]
-
+const MARCADOR_X = "X";
+const MARCADOR_O = "O";
 const SEARCH_DIRECTIONS = [
     [
         [0, 1],
@@ -31,38 +20,117 @@ const SEARCH_DIRECTIONS = [
     ],
 ]
 
-const limparQuadriculado = () => {
-    casasMarcadas = [
-        [CASA_VAZIA, CASA_VAZIA, CASA_VAZIA],
-        [CASA_VAZIA, CASA_VAZIA, CASA_VAZIA],
-        [CASA_VAZIA, CASA_VAZIA, CASA_VAZIA],
-    ];
+let jogadasFeitas = 0;
+let turnoTime = MARCADOR_X;
+let pontosX = 0;
+let pontosO = 0;
+let jogoConcluido = false;
+let quadriculado = {
+    elemento: document.getElementById("quadriculado"),
+    grid: [
+        [], [], []
+    ],
+    acharCasa: function (x, y) {
+        const coluna = this.grid[x]
+
+        if (coluna === undefined) {
+            return undefined;
+        }
+
+        return coluna[y];
+    },
+    inserirCasa: function (x, y, casa) {
+        const coluna = this.grid[x]
+
+        if (coluna === undefined) {
+            console.error("O valor de x deve estar entre 0 e 2");
+        }
+
+        if (y > 2) {
+            console.error("O valor de y deve estar entre 0 e 2");
+        }
+
+        coluna[y] = casa;
+    },
+    getAllCasas: function () {
+        let casas = [];
+
+        for (const col of this.grid) {
+            for (const casa of col) {
+                casas.push(casa);
+            }
+        }
+
+        return casas;
+    }
 }
 
-const getCasaCoords = (casa) => {
-    return [parseInt(casa.dataset.x), parseInt(casa.dataset.y)]
+const limparQuadriculado = () => {
+    for (const casa of quadriculado.getAllCasas()) {
+        casa.marcarCasa(CASA_VAZIA);
+    }
+}
+
+const altenarTurno = () => {
+    if (turnoTime === MARCADOR_X) {
+        turnoTime = MARCADOR_O;
+        document.documentElement.style.setProperty("--cor-jogador-atual", "blue")
+    } else if (turnoTime === MARCADOR_O) {
+        turnoTime = MARCADOR_X;
+        document.documentElement.style.setProperty("--cor-jogador-atual", "red")
+    }
+}
+
+const TEMPLATE_CASA = document.getElementById("casa-quadriculado");
+
+function marcarCasa(marcador){
+    if (marcador !== CASA_VAZIA && marcador !== MARCADOR_X && marcador !== MARCADOR_O) {
+        console.error(`Erro, o marcador tem um valor inválido de ${marcador}`);
+    }
+
+    const elementoCasa = this.elemento
+    const marcadoresAtivos = elementoCasa.getElementsByClassName("marcador-active");
+
+    // Remover os marcadores presentes para não evitar a sobreposição
+    for (const marcadorAtivo of marcadoresAtivos) {
+        marcadorAtivo.classList.remove("marcador-active");
+        elementoCasa.classList.remove("casa-ganhadora");
+    }
+
+    if (marcador === MARCADOR_X) {
+        elementoCasa.querySelector(".marcador-x").classList.add("marcador-active");
+    } else if (marcador === MARCADOR_O) {
+        elementoCasa.querySelector(".marcador-o").classList.add("marcador-active");
+    }
+
+    this.marcador = marcador;
+}
+
+const createCasa = () => {
+    const cloneCasa = TEMPLATE_CASA.cloneNode(true);
+    const casa = cloneCasa.content.querySelector(".casa");
+    const marcadores = casa.getElementsByClassName("marcador");
+    const quadriculado = document.getElementById("quadriculado");
+
+    quadriculado.appendChild(casa);
+
+    return {
+        marcador: CASA_VAZIA,
+        elemento: casa,
+        marcarCasa: marcarCasa,
+    }
 }
 
 const casaInNextDirection = ([x, y], direction) => {
     const nextX = x + direction[0];
     const nextY = y + direction[1];
 
-    const row = casasMarcadas[nextX];
-
-    if (row === undefined) {
-        return undefined;
-    }
-
-    return row[nextY];
+    return quadriculado.acharCasa(nextX, nextY)
 }
 
-const formouRisco = (casaMarcada, tipoMarcador) => {
-    const [x, y] = getCasaCoords(casaMarcada);
-
+const formouRisco = ([x, y, marcador]) => {
     let winner = null;
-    let casasDoRisco = [
-        [x, y],
-    ];
+    let casasVencedoras = [];
 
     for (const directions of SEARCH_DIRECTIONS) {
         let casasAdjacentes = 0;
@@ -73,40 +141,48 @@ const formouRisco = (casaMarcada, tipoMarcador) => {
 
             let nextCasa = null;
 
+            casasVencedoras.push([currentX, currentY]);
+
             while (nextCasa !== undefined) {
                 nextCasa = casaInNextDirection([currentX, currentY], direction);
 
-                if (nextCasa === CASA_VAZIA || nextCasa === undefined || nextCasa !== tipoMarcador) {
+                if (nextCasa === undefined) {
                     break;
                 }
 
-                casasDoRisco.push(nextCasa);
+                const marcadorCasa = nextCasa.marcador
+
+                if (marcadorCasa === CASA_VAZIA || marcadorCasa !== marcador) {
+                    break;
+                }
+
                 casasAdjacentes += 1;
 
                 // Continuar buscando na mesma direção
                 currentX += direction[0];
                 currentY += direction[1];
+                casasVencedoras.push([currentX, currentY]);
             }
         }
 
         if (casasAdjacentes === 2) {
-            winner = tipoMarcador;
+            winner = marcador;
 
             break;
+        } else {
+            casasVencedoras = [];
         }
     }
 
-    return [winner, casasDoRisco];
+    return [winner, casasVencedoras];
 }
 
 const updateGameState = (casaMarcada, tipoMarcador) => {
-    const [winner, posicoesMarcadas] = formouRisco(casaMarcada, tipoMarcador);
+    const [winner, casasVencedoras] = formouRisco(casaMarcada, tipoMarcador);
 
     if (jogadasFeitas < 9 && winner === null) {
         return;
     }
-
-    console.log(winner)
 
     if (winner === MARCADOR_X) {
         ++pontosX;
@@ -116,53 +192,57 @@ const updateGameState = (casaMarcada, tipoMarcador) => {
         ++pontosO;
 
         document.getElementById("pontos-o").textContent = pontosO;
+    } else {
+        quadriculado.elemento.classList.add("quadriculado-empatado");
     }
 
-    turnoTime = true;
-    jogadasFeitas = 0;
-    limparQuadriculado();
-    updateQuadriculado();
-}
+    casasVencedoras.forEach((posicao) => {
+        const casa = quadriculado.acharCasa(posicao[0], posicao[1]);
 
-const updateQuadriculado = () => {
-    for (let casa of casas) {
-        const [x, y] = getCasaCoords(casa)
-        const casaMarcada = casasMarcadas[x][y];
-        const spanMarcador = casa.querySelector('span');
-
-        let marcador = ""
-
-        if (casaMarcada === MARCADOR_X) {
-            marcador = "X";
-        } else if (casaMarcada === MARCADOR_O) {
-            marcador = "O";
+        if (casa === undefined) {
+            return;
         }
 
-        spanMarcador.textContent = marcador;
-    }
+        casa.elemento.classList.add("casa-ganhadora");
+    })
+
+    jogoConcluido = true;
+
+    setTimeout(() => {
+        jogadasFeitas = 0;
+        limparQuadriculado();
+        jogoConcluido = false;
+
+        turnoTime = MARCADOR_X;
+        document.documentElement.style.setProperty("--cor-jogador-atual", "red")
+        quadriculado.elemento.classList.remove("quadriculado-empatado");
+    }, 1500);
 }
 
-const casas = document.getElementsByClassName("casa");
-
-const onCasaClick = (casa) => {
-    const [x, y] = getCasaCoords(casa)
-    const casaMarcada = casasMarcadas[x][y];
-
-    if (casaMarcada !== CASA_VAZIA) {
+const onCasaClick = ([casa, x, y]) => {
+    if (jogoConcluido) {
         return;
     }
 
-    casasMarcadas[x][y] = turnoTime;
+    if (casa.marcador !== CASA_VAZIA) {
+        return;
+    }
+    casa.marcarCasa(turnoTime)
+
     ++jogadasFeitas;
+    updateGameState([x, y, casa.marcador])
 
-    updateGameState(casa, turnoTime)
-    updateQuadriculado()
-
-    turnoTime = !turnoTime
+    altenarTurno();
 }
 
-for (let casa of casas) {
-    casa.addEventListener("click", (e) => {
-        onCasaClick(casa);
-    })
+for (let x = 0; x < 3; x++) {
+    for (let y = 0; y < 3; y++) {
+        const casa = createCasa();
+
+        casa.elemento.addEventListener("click", (e) => {
+            onCasaClick([casa, x, y]);
+        })
+
+        quadriculado.inserirCasa(x, y, casa);
+    }
 }

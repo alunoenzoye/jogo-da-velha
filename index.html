@@ -8,16 +8,17 @@
 </head>
 <body>
 <div class="container-jogo">
-    <div class="quadriculado">
-        <div class="casa" data-x="0" data-y="0"><span class="marcador"></span></div>
-        <div class="casa" data-x="1" data-y="0"><span class="marcador"></span></div>
-        <div class="casa" data-x="2" data-y="0"><span class="marcador"></span></div>
-        <div class="casa" data-x="0" data-y="1"><span class="marcador"></span></div>
-        <div class="casa" data-x="1" data-y="1"><span class="marcador"></span></div>
-        <div class="casa" data-x="2" data-y="1"><span class="marcador"></span></div>
-        <div class="casa" data-x="0" data-y="2"><span class="marcador"></span></div>
-        <div class="casa" data-x="1" data-y="2"><span class="marcador"></span></div>
-        <div class="casa" data-x="2" data-y="2"><span class="marcador"></span></div>
+    <div style="display: none" class="anuncia-status">
+        <span class = "animate" id="status-jogo">VENCEU</span>
+        <div class="animate fundo-status"></div>
+    </div>
+    <div class="quadriculado" id="quadriculado">
+        <template id="casa-quadriculado">
+            <div class="casa">
+                <span class="marcador marcador-x">X</span>
+                <span class="marcador marcador-o">O</span>
+            </div>
+        </template>
     </div>
     <div class="pontuacao">
         <div class="time">
